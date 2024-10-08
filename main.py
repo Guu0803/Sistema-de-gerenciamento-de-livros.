@@ -1,73 +1,84 @@
-#import de todas as bilbiotecas necessárias
-import sqlite3
-import pandas as pd
+#import da biblioteca Matplotlib
 import matplotlib.pyplot as plt
-import seaborn as sns
+#Classe
+class Livro: 
+  def __init__(self, titulo, autor, genero, quantidade):
+    self.titulo = titulo
+    self.autor = autor
+    self.genero = genero
+    self.quantidade = quantidade
+  #retornando o objeto de forma legível
+  def __str__(self):
+    return f"Título: {self.titulo}, Autor: {self.autor}, Gênero: {self.genero}, Quantidade: {self.quantidade}"
+#lista onde ficará armazenada os livros
+biblioteca = []
+#função para cadastrar o livro 
+def cadastrar_livro(titulo, autor, genero, quantidade):
+    livro = Livro(titulo, autor, genero, quantidade)
+    biblioteca.append(livro)
+    print(f'Livro {titulo} cadastrado com sucesso!')
+#função para listar os livros
+def listar_livros():
+    if biblioteca:
+        print('Lista de livros disponíveis:')
+        for livro in biblioteca:
+            print(livro)
+    else:
+        print('Nenhum livro cadastrado.')
 
-#Conectando ao banco de dados 
-conexao = sqlite3.connect('dados_vendas.db')
 
-#Criando  um cursor
-cursor = conexao.cursor()
 
-#Criando a tabela
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS vendas1 (
-    id_venda INTEGER PRIMARY KEY AUTOINCREMENT,
-    data_venda DATE,
-    produto TEXT,
-    categoria TEXT,
-    valor_venda REAL
-)
-''')
-#Inserindo os dados na tabela
-cursor.execute('''
-INSERT INTO vendas1 (data_venda, produto, categoria, valor_venda) VALUES
-    ('2023-01-01', 'Produto A', 'Eletrônicos', 1500.00),
-    ('2023-01-05', 'Produto B', 'Roupas', 350.00),
-    ('2023-02-10', 'Produto C', 'Eletrônicos', 1200.00),
-    ('2023-03-15', 'Produto D', 'Livros', 200.00),
-    ('2023-03-20', 'Produto E', 'Eletrônicos', 800.00),
-    ('2023-04-02', 'Produto F', 'Roupas', 400.00),
-    ('2023-05-05', 'Produto G', 'Livros', 150.00),
-    ('2023-06-10', 'Produto H', 'Eletrônicos', 1000.00),
-    ('2023-07-20', 'Produto I', 'Roupas', 600.00),
-    ('2023-08-25', 'Produto J', 'Eletrônicos', 700.00),
-    ('2023-09-30', 'Produto K', 'Livros', 300.00),
-    ('2023-10-05', 'Produto L', 'Roupas', 450.00),
-    ('2023-11-15', 'Produto M', 'Eletrônicos', 900.00),
-    ('2023-12-20', 'Produto N', 'Livros', 250.00)
-''')
-conexao.commit()
+#função para buscar livro pelo titulo
+def buscar_livro(titulo):
+  for livro in biblioteca:
+    if livro.titulo.lower() == titulo.lower():
+      return print(f'Livro encontrado:{livro}') 
+    else:
+      return print(f'o livro {titulo} não foi encontrado')
 
-#Após a criação da tabela, carregar os dados para a biblioteca Pandas
-df_vendas = pd.read_sql_query("SELECT * FROM vendas1", conexao)
-print(df_vendas.head())
-print(df_vendas.info())
-print(df_vendas.describe())
+def gerar_grafico():
+    if not biblioteca:
+        print('Nenhum livro cadastrado para gerar gráfico.')
+        return
+    
+    # Dicionário para contar a quantidade de livros por gênero
+    generos = {}
+    
+    for livro in biblioteca:
+      #verifica se o genero do livro atual ja existe como chave no dicionário
+        if livro.genero in generos:
+          #se ja existe, incrementa a quantidade
+            generos[livro.genero] += livro.quantidade
+        else:
+          #se não, cria um chave com o nome do gênero
+            generos[livro.genero] = livro.quantidade
+    
+    # Gerando o gráfico
+    generos_lista = list(generos.keys())
+    quantidades_lista = list(generos.values())
+    
+    plt.bar(generos_lista, quantidades_lista)
+    plt.xlabel('Gênero')
+    plt.ylabel('Quantidade de Livros')
+    plt.title('Quantidade de Livros por Gênero')
+    plt.show()
 
-#Total de vendas por categoria
-vendas_por_categoria = df_vendas.groupby('categoria')['valor_venda'].sum().reset_index()
-print(vendas_por_categoria)
+#cadastro dos livros        
+cadastrar_livro('Código Limpo', 'Robert Cecil Martin', 'Informática', 15)
+cadastrar_livro('Duna: livro 1', 'Frank Herbert','Ficção científica', 8 )
+cadastrar_livro("1984", "George Orwell", "Distopia", 5),
+cadastrar_livro("O Senhor dos Anéis", "J.R.R. Tolkien", "Fantasia", 7),
+cadastrar_livro("Dom Quixote", "Miguel de Cervantes", "Clássico", 3),
+cadastrar_livro("Neuromancer", "William Gibson", "Ficção Científica", 4),
+cadastrar_livro("Harry Potter e a Pedra Filosofal", "J.K. Rowling", "Fantasia", 10),
+cadastrar_livro("Admirável Mundo Novo", "Aldous Huxley", "Distopia", 6),
+cadastrar_livro("O Grande Gatsby", "F. Scott Fitzgerald", "Clássico", 2)
 
-#Total de vendas por mês
-df_vendas['data_venda'] = pd.to_datetime(df_vendas['data_venda'])
-df_vendas['mes'] = df_vendas['data_venda'].dt.month
-vendas_por_mes = df_vendas.groupby('mes')['valor_venda'].sum().reset_index()
-print(vendas_por_mes)
+#listagem dos livros
+listar_livros()
 
-# Gráfico de vendas por categoria
-plt.figure(figsize=(8, 6))
-sns.barplot(x='categoria', y='valor_venda', data=vendas_por_categoria)
-plt.title('Vendas por Categoria')
-plt.ylabel('Total de Vendas (R$)')
-plt.xlabel('Categoria')
-plt.show()
-# Gráfico de vendas por mês
-plt.figure(figsize=(8, 6))
-sns.lineplot(x='mes', y='valor_venda', data=vendas_por_mes, marker='o')
-plt.title('Vendas Mensais')
-plt.ylabel('Total de Vendas (R$)')
-plt.xlabel('Mês')
-plt.xticks(range(1, 13))
-plt.show()
+#buscar livro
+buscar_livro('Código Limpo')
+
+#gerar gráfico
+gerar_grafico()
